@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GRAPHNAME_PLACEHOLDER</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: white;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            background-color: #939598;
+            color: white;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            z-index: 1000;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .logo {
+            width: 250px;
+            height: 80px;
+            background-color: #662d91;
+            display: block;
+            padding: 0;
+            margin: 0;
+            flex-shrink: 0;
+            position: relative;
+            left: 0;
+            cursor: pointer;
+        }
+        .logo a {
+            display: block;
+            width: 100%;
+            height: 100%;
+            text-decoration: none;
+        }
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            margin: 0;
+            padding: 0;
+        }
+        .title {
+            font-size: 20px;
+            font-weight: normal;
+            padding-left: 0;
+        }
+        .latest-badge {
+            color: #490e6f;
+            font-weight: 600;
+        }
+        .snapshot-badge {
+            color: #0e646f;
+            font-weight: 600;
+        }
+        .header-center {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex: 1;
+            justify-content: center;
+        }
+        .legend {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .legend-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .legend-box {
+            width: 40px;
+            height: 20px;
+            border: 1px solid #999;
+            border-radius: 2px;
+        }
+        .legend-label {
+            font-size: 10px;
+            color: white;
+            text-align: center;
+            line-height: 1.2;
+            max-width: 80px;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-right: 15px;
+        }
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .icon-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .icon-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: #490e6f;
+        }
+        .db-switcher {
+            position: relative;
+            display: inline-block;
+        }
+        .db-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: white;
+            min-width: 150px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            border-radius: 4px;
+            margin-top: 5px;
+            z-index: 3000;
+        }
+        .db-dropdown.show {
+            display: block;
+        }
+        .db-dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            color: #333;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.2s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
+        }
+        .db-dropdown-item:hover {
+            background-color: #f0f0f0;
+        }
+        .db-dropdown-item:first-child {
+            border-radius: 4px 4px 0 0;
+        }
+        .db-dropdown-item:last-child {
+            border-radius: 0 0 4px 4px;
+        }
+        .db-dropdown-item.active {
+            background-color: #e7d4f7;
+            font-weight: 600;
+            color: #490e6f;
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-overlay.show {
+            display: flex;
+        }
+        .loading-content {
+            background-color: white;
+            padding: 30px 40px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #490e6f;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            padding: 0;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .modal-content.wide {
+            max-width: 800px;
+        }
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            margin: 0;
+            color: #333;
+            font-size: 20px;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            line-height: 1;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+        .modal-close:hover {
+            color: #333;
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .modal-footer-left {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-footer-right {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        .btn-primary {
+            background-color: #490e6f;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #5d1189;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .btn-outline {
+            background-color: white;
+            color: #490e6f;
+            border: 1px solid #490e6f;
+        }
+        .btn-outline:hover {
+            background-color: #f8f9fa;
+        }
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .calendar-container {
+            padding: 10px;
+        }
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .calendar-header button {
+            background: #490e6f;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .calendar-header button:hover {
+            background: #5d1189;
+        }
+        .calendar-month-year {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        .calendar-day-header {
+            text-align: center;
+            font-weight: 600;
+            padding: 10px;
+            color: #666;
+            font-size: 12px;
+        }
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            background: white;
+        }
+        .calendar-day:hover {
+            background-color: #f0f0f0;
+            border-color: #490e6f;
+        }
+        .calendar-day.empty {
+            border: none;
+            cursor: default;
+            background: transparent;
+        }
+        .calendar-day.has-snapshots {
+            background-color: #e7d4f7;
+            border-color: #490e6f;
+            font-weight: 600;
+        }
+        .calendar-day.has-snapshots:hover {
+            background-color: #d4b5f0;
+        }
+        .calendar-day-number {
+            font-size: 14px;
+            color: #333;
+        }
+        .calendar-day-count {
+            font-size: 10px;
+            color: #490e6f;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+        .snapshot-list {
+            display: none;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .snapshot-list.active {
+            display: block;
+        }
+        .snapshot-list-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .snapshot-item {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            background: white;
+        }
+        .snapshot-item:hover {
+            background-color: #e7d4f7;
+        }
+        .snapshot-item.selected {
+            background-color: #d4b5f0;
+            border-color: #490e6f;
+        }
+        .history-item {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .history-item:hover {
+            background-color: #f8f9fa;
+        }
+        .history-item.selected {
+            background-color: #e7d4f7;
+            border-color: #490e6f;
+        }
+        .history-item-date {
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+        .dropdown-label {
+            font-size: 14px;
+        }
+        select {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            background-color: white;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+            min-width: 200px;
+        }
+        select:focus {
+            outline: 2px solid #662d91;
+        }
+        .content {
+            position: fixed;
+            top: 69px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            cursor: default;
+            background-color: transparent;
+        }
+        .content.grabbing {
+            cursor: grabbing !important;
+        }
+        .content.grab-mode {
+            cursor: grab;
+        }
+        .svg-container {
+            background-color: transparent;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-origin: center center;
+            cursor: default;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        svg {
+            display: block;
+            cursor: default;
+            background-color: transparent;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+        }
+        svg text {
+            cursor: text;
+            user-select: text;
+        }
+        svg g.node {
+            cursor: default;
+        }
+        svg g.node text {
+            cursor: text;
+            user-select: text;
+        }
+        .zoom-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .zoom-btn:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">
+                <a href="LATEST_PAGE_URL_PLACEHOLDER" title="Return to latest" onclick="showLoading()">
+                    <img src="RenownHealth_Logo.png" alt="Renown Health">
+                </a>
+            </div>
+            <div class="title">GRAPHNAME_PLACEHOLDER</div>
+        </div>
+        <div class="header-center">
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-box" style="background-color: #cee2ffff; border: 2px solid #333;"></div>
+                    <div class="legend-label">Source<br/>Mart</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background-color: #a487b7; border: 2px solid #333;"></div>
+                    <div class="legend-label">Subject Area<br/>Mart</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background-color: #cfcfcfed; border: 2px solid #333;"></div>
+                    <div class="legend-label">Wrong Data Mart<br/>(or Removed)</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background-color: #ffb255ed; border: 2px solid #333;"></div>
+                    <div class="legend-label">Wrong Job<br/>Name</div>
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="dropdown-label">Filter:</span>
+            <select id="batchFilter" onchange="switchView()">
+                <option value="all">All Batches</option>
+                <option value="not-run">Did Not Run Today</option>
+                <option value="broken-refs">Broken References</option>
+            </select>
+            <button class="icon-btn" onclick="openHistoryModal()" title="View History">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zm-7 4h5v5h-5z"/>
+                </svg>
+            </button>
+            <div class="db-switcher">
+                <button class="icon-btn" onclick="toggleDbDropdown()" title="Switch Environment">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 3C7.58 3 4 4.79 4 7v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7c0-2.21-3.58-4-8-4zm6 14c0 .55-2.69 2-6 2s-6-1.45-6-2v-2.23c1.61.78 3.72 1.23 6 1.23s4.39-.45 6-1.23V17zm0-4.55c-1.3.95-3.58 1.55-6 1.55s-4.7-.6-6-1.55V9.64c1.47.83 3.61 1.36 6 1.36s4.53-.53 6-1.36v2.81zM12 9C8.69 9 6 7.55 6 7s2.69-2 6-2 6 1.45 6 2-2.69 2-6 2z"/>
+                    </svg>
+                </button>
+                <div id="dbDropdown" class="db-dropdown">
+                    <button class="db-dropdown-item" onclick="switchEnvironment('DEV')">
+                        RHNV-EDWDEV
+                    </button>
+                    <button class="db-dropdown-item" onclick="switchEnvironment('PROD')">
+                        RHNV-EDWPROD
+                    </button>
+                </div>
+            </div>
+            <button class="icon-btn" onclick="openHelpModal()" title="Help">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <!-- History Modal -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>View Historical Snapshots</h2>
+                <button class="modal-close" onclick="closeHistoryModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="calendarContainer" class="calendar-container"></div>
+                <div id="snapshotListContainer" class="snapshot-list"></div>
+            </div>
+            <div class="modal-footer">
+                <div class="modal-footer-left">
+                    <button class="btn btn-outline" onclick="resetToLatest()">Reset (Latest)</button>
+                </div>
+                <div class="modal-footer-right">
+                    <button class="btn btn-secondary" onclick="closeHistoryModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="loadSelectedHistory()">Okay</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content wide">
+            <div class="modal-header">
+                <h2>Help & Information</h2>
+                <button class="modal-close" onclick="closeHelpModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3 style="color: #490e6f; margin-top: 0;">Batch Sequencing Visualization</h3>
+                <p>This application visualizes the ETL (Extract, Transform, Load) batch sequencing for the Health Catalyst DOS Platform. It helps you understand the dependencies and execution flow from Source Mart jobs to SAM Jobs.</p>
+                </br></br>
+                <h4 style="color: #490e6f;">Features:</h4>
+                <ul style="line-height: 1.8; margin-left: 20px;">
+                    <li><strong>All Batches:</strong> View the complete batch sequence diagram</li>
+                    <li><strong>Did Not Run Today:</strong> Filter to show only batches that have not yet run today or failed.</li>
+                    <li><strong>Broken References:</strong> View batches with broken references/dependencies.
+                    </br>
+                    <div style="color: red;"><em>Note: Did Not Run Today / Broken References, include parent dependencies for lineage purposes.</em></div>
+                    </li>
+                    <li><strong>History:</strong> Access historical snapshots to compare batch sequences over time</li>
+                    <li><strong>Zoom & Pan:</strong> Use mouse wheel to zoom, click and drag on whitespace to pan</li>
+                    <li><strong>Text Selection:</strong> Click on node text to select and copy information</li>
+                </ul>
+                </br></br>
+                <h4 style="color: #490e6f;">Need Help?</h4>
+                <p>If you have questions or are experiencing any issues or bugs with this application, please contact:</p>
+                </br>
+                <p>
+                    <strong>Ronald Odiyar</strong><br>
+                    Email: <a href="mailto:ronald.odiyar@renown.org" style="color: #490e6f;">ronald.odiyar@renown.org</a>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <div class="modal-footer-left"></div>
+                <div class="modal-footer-right">
+                    <button class="btn btn-primary" onclick="closeHelpModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="content" id="content">
+        <div class="svg-container" id="svgContainerAll">
+SVG_CONTENT_ALL_PLACEHOLDER
+        </div>
+        <div class="svg-container" id="svgContainerFiltered" style="display: none;">
+SVG_CONTENT_FILTERED_PLACEHOLDER
+        </div>
+        <div class="svg-container" id="svgContainerBroken" style="display: none;">
+SVG_CONTENT_BROKEN_PLACEHOLDER
+        </div>
+    </div>
+    <div class="zoom-controls">
+        <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+        <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">-</button>
+        <button class="zoom-btn" onclick="resetZoom()" title="Reset">R</button>
+    </div>
+    <script>
+        // Zoom and Pan functionality
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isDragging = false;
+        let startX, startY;
+        let currentContainer = 'svgContainerAll';
+        
+        const content = document.getElementById('content');
+        
+        function getCurrentContainer() {
+            return document.getElementById(currentContainer);
+        }
+        
+        function updateTransform() {
+            const container = getCurrentContainer();
+            if (container) {
+                const svg = container.querySelector('svg');
+                if (svg) {
+                    svg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+                }
+            }
+        }
+        
+        function fitToViewport() {
+            const container = getCurrentContainer();
+            if (!container) return;
+            
+            const svg = container.querySelector('svg');
+            if (!svg) return;
+            
+            // Reset transform
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            svg.style.transform = '';
+            
+            // Get SVG dimensions
+            const svgRect = svg.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            
+            // Calculate scale to fit
+            const scaleX = containerRect.width / svgRect.width;
+            const scaleY = containerRect.height / svgRect.height;
+            scale = Math.min(scaleX, scaleY, 1) * 0.95; // 95% to add some padding
+            
+            // Center the SVG
+            translateX = 0;
+            translateY = 0;
+            
+            updateTransform();
+        }
+        
+        function zoomIn() {
+            scale *= 1.2;
+            updateTransform();
+        }
+        
+        function zoomOut() {
+            scale /= 1.2;
+            updateTransform();
+        }
+        
+        function resetZoom() {
+            fitToViewport();
+        }
+        
+        function switchView() {
+            const filter = document.getElementById('batchFilter').value;
+            
+            // Check if we're on a historical snapshot page (has timestamp in title)
+            const isHistoricalPage = document.title.includes('Snapshot');
+            
+            // If on historical page and trying to use filters, navigate to latest page
+            if (isHistoricalPage && filter !== 'all') {
+                // Navigate to latest page with the selected filter
+                const latestPageUrl = 'LATEST_PAGE_URL_PLACEHOLDER';
+                window.location.href = latestPageUrl + '#filter=' + filter;
+                return;
+            }
+            
+            const containerAll = document.getElementById('svgContainerAll');
+            const containerFiltered = document.getElementById('svgContainerFiltered');
+            const containerBroken = document.getElementById('svgContainerBroken');
+            
+            // Hide all containers
+            containerAll.style.display = 'none';
+            containerFiltered.style.display = 'none';
+            containerBroken.style.display = 'none';
+            
+            // Show selected container
+            if (filter === 'all') {
+                containerAll.style.display = 'flex';
+                currentContainer = 'svgContainerAll';
+            } else if (filter === 'not-run') {
+                containerFiltered.style.display = 'flex';
+                currentContainer = 'svgContainerFiltered';
+            } else if (filter === 'broken-refs') {
+                containerBroken.style.display = 'flex';
+                currentContainer = 'svgContainerBroken';
+            }
+            
+            // Fit to viewport after switching
+            setTimeout(fitToViewport, 50);
+        }
+        
+        // Mouse wheel zoom
+        content.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const container = getCurrentContainer();
+            if (!container) return;
+            
+            const svg = container.querySelector('svg');
+            if (!svg) return;
+            
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            const rect = svg.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const oldScale = scale;
+            scale *= delta;
+            
+            // Adjust translation to zoom towards mouse position
+            const scaleChange = scale / oldScale;
+            translateX = x - (x - translateX) * scaleChange;
+            translateY = y - (y - translateY) * scaleChange;
+            
+            updateTransform();
+        });
+        
+        // Pan functionality - only when not over text/nodes
+        content.addEventListener('mousedown', (e) => {
+            // Check if clicking on text or node
+            const target = e.target;
+            if (target.tagName === 'text' || target.tagName === 'tspan' || 
+                target.closest('g.node') || target.closest('text')) {
+                return; // Don't start dragging if over text/node
+            }
+            
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            content.classList.add('grabbing');
+            content.classList.add('grab-mode');
+        });
+        
+        content.addEventListener('mousemove', (e) => {
+            // Update cursor based on what's under the mouse
+            const target = e.target;
+            if (target.tagName === 'text' || target.tagName === 'tspan' || 
+                target.closest('g.node') || target.closest('text')) {
+                content.classList.remove('grab-mode');
+            } else if (!isDragging) {
+                content.classList.add('grab-mode');
+            }
+            
+            if (!isDragging) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform();
+        });
+        
+        content.addEventListener('mouseup', () => {
+            isDragging = false;
+            content.classList.remove('grabbing');
+        });
+        
+        content.addEventListener('mouseleave', () => {
+            isDragging = false;
+            content.classList.remove('grabbing');
+            content.classList.remove('grab-mode');
+        });
+        
+        // Fit to viewport on load
+        window.addEventListener('load', () => {
+            setTimeout(fitToViewport, 100);
+        });
+        
+        // Fit to viewport on window resize
+        window.addEventListener('resize', () => {
+            fitToViewport();
+        });
+        
+        // Modal functions
+        let selectedHistoryFile = null;
+        let historicalSnapshots = SNAPSHOTS_JSON_PLACEHOLDER;
+        let currentServer = 'SERVER_PLACEHOLDER'; // Will be replaced by PowerShell
+        let currentCalendarMonth = new Date();
+        let snapshotsByDate = {};
+        
+        function openHistoryModal() {
+            buildCalendar();
+            document.getElementById('historyModal').classList.add('show');
+        }
+        
+        function closeHistoryModal() {
+            document.getElementById('historyModal').classList.remove('show');
+        }
+        
+        function openHelpModal() {
+            document.getElementById('helpModal').classList.add('show');
+        }
+        
+        function closeHelpModal() {
+            document.getElementById('helpModal').classList.remove('show');
+        }
+        
+        // Close modals when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('show');
+            }
+        });
+        
+        // Group snapshots by date
+        function groupSnapshotsByDate() {
+            snapshotsByDate = {};
+            if (historicalSnapshots && historicalSnapshots.length > 0) {
+                historicalSnapshots.forEach(snapshot => {
+                    if (!snapshotsByDate[snapshot.date]) {
+                        snapshotsByDate[snapshot.date] = [];
+                    }
+                    snapshotsByDate[snapshot.date].push(snapshot);
+                });
+            }
+        }
+        
+        // Build calendar
+        function buildCalendar() {
+            groupSnapshotsByDate();
+            
+            const container = document.getElementById('calendarContainer');
+            const year = currentCalendarMonth.getFullYear();
+            const month = currentCalendarMonth.getMonth();
+            
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            let html = `
+                <div class="calendar-header">
+                    <button onclick="previousMonth()">&lt;</button>
+                    <div class="calendar-month-year">${monthNames[month]} ${year}</div>
+                    <button onclick="nextMonth()">&gt;</button>
+                </div>
+                <div class="calendar-grid">
+                    <div class="calendar-day-header">Sun</div>
+                    <div class="calendar-day-header">Mon</div>
+                    <div class="calendar-day-header">Tue</div>
+                    <div class="calendar-day-header">Wed</div>
+                    <div class="calendar-day-header">Thu</div>
+                    <div class="calendar-day-header">Fri</div>
+                    <div class="calendar-day-header">Sat</div>
+            `;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Empty cells before first day
+            for (let i = 0; i < firstDay; i++) {
+                html += '<div class="calendar-day empty"></div>';
+            }
+            
+            // Days of month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const snapshots = snapshotsByDate[dateStr] || [];
+                const hasSnapshots = snapshots.length > 0;
+                
+                html += `
+                    <div class="calendar-day ${hasSnapshots ? 'has-snapshots' : ''}" 
+                         onclick="${hasSnapshots ? `showSnapshotsForDate('${dateStr}')` : ''}">
+                        <div class="calendar-day-number">${day}</div>
+                        ${hasSnapshots ? `<div class="calendar-day-count">${snapshots.length}</div>` : ''}
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        function previousMonth() {
+            currentCalendarMonth.setMonth(currentCalendarMonth.getMonth() - 1);
+            buildCalendar();
+        }
+        
+        function nextMonth() {
+            currentCalendarMonth.setMonth(currentCalendarMonth.getMonth() + 1);
+            buildCalendar();
+        }
+        
+        function showSnapshotsForDate(dateStr) {
+            const snapshots = snapshotsByDate[dateStr] || [];
+            const container = document.getElementById('snapshotListContainer');
+            
+            if (snapshots.length === 0) {
+                container.classList.remove('active');
+                return;
+            }
+            
+            // Sort snapshots by time ascending (earliest first)
+            snapshots.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+            
+            let html = `<div class="snapshot-list-title">Snapshots for ${dateStr}:</div>`;
+            
+            snapshots.forEach((snapshot, index) => {
+                // Use the formatted time if available
+                const timeDisplay = snapshot.timeFormatted || snapshot.time;
+                html += `
+                    <div class="snapshot-item" onclick="selectSnapshot('${snapshot.filename}', this)">
+                        ${timeDisplay}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            container.classList.add('active');
+        }
+        
+        function selectSnapshot(filename, element) {
+            // Remove selected class from all items
+            document.querySelectorAll('.snapshot-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked item
+            element.classList.add('selected');
+            selectedHistoryFile = filename;
+        }
+        
+        async function loadSelectedHistory() {
+            if (!selectedHistoryFile) {
+                alert('Please select a snapshot from the list');
+                return;
+            }
+            
+            try {
+                // Find the selected snapshot in the historicalSnapshots array
+                const snapshot = historicalSnapshots.find(s => s.filename === selectedHistoryFile);
+                
+                if (!snapshot) {
+                    alert('Snapshot not found in the list');
+                    return;
+                }
+                
+                // Show loading overlay before navigation
+                showLoading();
+                
+                // Open the corresponding HTML file
+                if (snapshot.htmlFile) {
+                    window.location.href = snapshot.htmlFile;
+                } else {
+                    hideLoading();
+                    alert('HTML file not found for this snapshot');
+                }
+                
+            } catch (error) {
+                hideLoading();
+                console.error('Error loading historical snapshot:', error);
+                alert('Failed to load the selected snapshot: ' + error.message);
+            }
+        }
+        
+        function resetToLatest() {
+            // Navigate to the latest page
+            showLoading();
+            window.location.href = 'LATEST_PAGE_URL_PLACEHOLDER';
+        }
+        
+        // Database switcher functions
+        function toggleDbDropdown() {
+            const dropdown = document.getElementById('dbDropdown');
+            dropdown.classList.toggle('show');
+            
+            // Highlight current environment
+            updateActiveEnvironment();
+        }
+        
+        function updateActiveEnvironment() {
+            const currentPage = window.location.pathname;
+            const items = document.querySelectorAll('.db-dropdown-item');
+            
+            items.forEach(item => {
+                item.classList.remove('active');
+                const env = item.textContent.trim().split(' ')[0]; // Get 'DEV' or 'PROD'
+                
+                if ((env === 'DEV' && currentPage.includes('EDWDEV')) ||
+                    (env === 'PROD' && currentPage.includes('EDWPROD'))) {
+                    item.classList.add('active');
+                }
+            });
+        }
+        
+        function switchEnvironment(env) {
+            showLoading();
+            
+            const currentPage = window.location.pathname;
+            const currentFile = currentPage.substring(currentPage.lastIndexOf('/') + 1);
+            
+            let newFile;
+            if (env === 'DEV') {
+                // Switch to DEV
+                newFile = currentFile.replace('EDWPROD', 'EDWDEV');
+            } else {
+                // Switch to PROD
+                newFile = currentFile.replace('EDWDEV', 'EDWPROD');
+            }
+            
+            // Navigate to the new environment
+            window.location.href = newFile;
+        }
+        
+        // Loading overlay functions
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.add('show');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('dbDropdown');
+            const switcher = document.querySelector('.db-switcher');
+            
+            if (dropdown && switcher && !switcher.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+        
+        // On page load, check for filter hash and apply it
+        window.addEventListener('DOMContentLoaded', function() {
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#filter=')) {
+                const filterValue = hash.substring(8); // Remove '#filter='
+                const filterSelect = document.getElementById('batchFilter');
+                if (filterSelect) {
+                    filterSelect.value = filterValue;
+                    switchView();
+                }
+            }
+        });
+    </script>
+    
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Loading page...</div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,6 @@
+digraph "Batch Sequencing - RHNV-EDWDEV"{
+    graph [layout=dot, fontname=Arial, fontsize=10, labelloc=t, label=<<b>Batch Sequencing - RHNV-EDWDEV - Broken References</b><br />Showing only nodes with broken references and their parent nodes<br /> >];
+    node [shape=none, margin=0, fontname=Arial, fontsize=8];
+    "LaborManagement.Refresh Labor Management" [label=<<table border="1" cellspacing="0" cellpadding="5" cellborder="0"><tr><td bgcolor="#a487b7"><b>LaborManagement</b></td></tr><tr><td bgcolor="#ffb255ed" data-cell-info="Broken References">Refresh Labor Management</td></tr><tr><td>Average Duration-0 min</td></tr><tr>Last Run <td bgcolor="#FF0000" style="color: #ffffff">Did not run today</td></tr></table>>];
+
+}

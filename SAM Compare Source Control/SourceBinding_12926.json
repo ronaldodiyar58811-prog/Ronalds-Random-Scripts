@@ -1,0 +1,44 @@
+{
+  "@odata.context": "https://rhnv-webprod.rhnv.hosted/MetadataService/v1/$metadata#SourceBindings/$entity",
+  "Id": 12926,
+  "DestinationEntityId": 14144,
+  "DataMartId": 558,
+  "Name": "SummaryMetricRemoteWorkHistory",
+  "Classification": "Summary",
+  "Description": null,
+  "Status": "Active",
+  "SourceConnectionId": 661,
+  "GroupingColumn": null,
+  "GroupingFormat": null,
+  "ContentId": "e4e8ed09-3d58-4c6f-bf04-cd3fad9dff7f",
+  "BindingType": "SQL",
+  "GrainName": null,
+  "LoadTypeCode": "Full",
+  "AttributeValues@odata.context": "https://rhnv-webprod.rhnv.hosted/MetadataService/v1/$metadata#SourceBindings(12926)/AttributeValues",
+  "AttributeValues": [
+    {
+      "ObjectId": 12926,
+      "Id": 215322,
+      "AttributeName": "DisableIncrementalQueryTokenValidation",
+      "AttributeValue": "False"
+    },
+    {
+      "ObjectId": 12926,
+      "Id": 215321,
+      "AttributeName": "IsProtected",
+      "AttributeValue": "False"
+    },
+    {
+      "ObjectId": 12926,
+      "Id": 215320,
+      "AttributeName": "Tags",
+      "AttributeValue": null
+    },
+    {
+      "ObjectId": 12926,
+      "Id": 215319,
+      "AttributeName": "UserDefinedSQL",
+      "AttributeValue": "/************************* SAM Documentation **********************************************************************\r\n* SummaryMetricRemoteWorkHistory\r\n* Date: 9/12/2025\r\n* Author: \r\n\r\n* Business Owner / SME:  BI Support Services\r\n* Primary Support Contact:  BI Support Services\r\n* Secondary Support Contact: \r\n\r\n****************************************************************************************************************\r\n** Change History\r\n****************************************************************************************************************\r\n**PR    Date            Author          Description\r\n* 01\t\t09/12/2025\t    Tyler Snook\t\tNew entity created - request from Miranda Nguyen and Tracy Hamilton to have a historical records use in Labor Management PowerBI dashboard\r\n\t\t\t\t09/15/2025\t\t\t\t            Added Exclusion logic - KRN contracts would need to be active only until 5/31/24 month when UKG go-live was completed.\r\n* 02\t  10/01/2025\t    Tyler Snook\t\tNow has companyCD for context join.\r\n* 03   10/14/2025      Tyler Snook   SR readded SourceDSC\r\n***************************************************************************************************************/\r\n\r\nSELECT\r\n\tMonthStartDTS,\r\n\tMonthEndDTS,\r\n\tEmployeeID,\r\n\tEventFromEffectiveDTS,\r\n\tEventToEffectiveDTS,\r\n\tRemoteWorkDSC,\r\n\tCompanyCD,\r\n\tSourceDSC\r\nFROM\r\n(\r\n\tSELECT\r\n\t\tsc.MonthStartDTS,\r\n\t\tsc.MonthEndDTS,\r\n\t\te.EmployeeID,\r\n\t\te.EventFromEffectiveDTS,\r\n\t\te.EventToEffectiveDTS,\r\n\t\te.EventCodeDSC as RemoteWorkDSC,\r\n\t\te.CompanyCD,\r\n\t\te.SourceDSC,\r\n\t\tROW_NUMBER() OVER(PARTITION BY EmployeeID, MonthStartDTS ORDER BY EventToEffectiveDTS, CompanyCD DESC) as rn\r\n\tFROM Shared.Reference.StandardCalendar sc\r\n\t\tJOIN SAM.LaborManagement.MetricRemoteWorker e\r\n\t\t\tON e.EventFromEffectiveDTS <= sc.MonthEndDTS\r\n\t\t\t\tAND e.EventToEffectiveDTS >= sc.MonthStartDTS\r\n\tWHERE year(sc.MonthStartDTS) > year(DATEADD(yyyy, -15, GETDATE())) and eomonth(sc.DateDTS) <= eomonth(getdate())\r\n) z\r\nWHERE rn=1\r\n\r\n\r\n--\tSELECT\r\n--\tMonthStartDTS,\r\n--\tMonthEndDTS,\r\n--\tEmployeeID,\r\n--\tEventFromEffectiveDTS,\r\n--\tEventToEffectiveDTS,\r\n--\tRemoteWorkDSC,\r\n--\tSourceDSC\r\n--\tFROM (\r\n--\t\t\t\t\tSELECT\r\n--\t\t\t\t\t\tsc.MonthStartDTS,\r\n--\t\t\t\t\t\tsc.MonthEndDTS,\r\n--\t\t\t\t\t\te.EmployeeID,\r\n--\t\t\t\t\t\te.EventFromEffectiveDTS,\r\n--\t\t\t\t\t\te.EventToEffectiveDTS,\r\n--\t\t\t\t\t\te.EventCodeDSC as RemoteWorkDSC,\r\n--\t\t\t\t\t\te.SourceDSC,\r\n--\t\t\t\t\t\tcase when e.SourceDSC = 'KRN' and e.EventToEffectiveDTS > '05/31/2024' then 1 else 0 end as ExcludeFLG, --Contracts active KRN go-live require exclusion \r\n--\t\t\t\t\t   ROW_NUMBER() OVER(PARTITION BY EmployeeID, MonthStartDTS ORDER BY EventToEffectiveDTS, SourceDSC DESC) as rn\r\n--\t\t\t\t\tFROM\r\n--\t\t\t\t\t\tShared.Reference.StandardCalendar sc\r\n--\t\t\t\t\tJOIN\r\n--\t\t\t\t\t\tSAM.LaborManagement.MetricRemoteWorker e\r\n--\t\t\t\t\t\tON e.EventFromEffectiveDTS <= sc.MonthEndDTS\r\n--\t\t\t\t\t   AND e.EventToEffectiveDTS >= sc.MonthStartDTS\r\n--\t\t\t\t\tWHERE   year(sc.MonthStartDTS) > year(DATEADD(yyyy, -15, GETDATE())) and eomonth(sc.DateDTS) <= eomonth(getdate())\r\n\t\t\t\t\t\r\n--\t   ) z\r\n--\tWHERE rn=1 and ExcludeFLG = 0\r\n"
+    }
+  ]
+}
