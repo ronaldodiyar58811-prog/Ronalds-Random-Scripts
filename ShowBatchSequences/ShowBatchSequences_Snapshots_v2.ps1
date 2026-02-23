@@ -106,7 +106,7 @@ function write-outputlog {
 		$devExist = $false
 
         #$directorypath = "\\"+$ProdServerCD+"\Staging\Powershell\ShowBatchSequences"
-        $directorypath = "C:\Users\58811.WMCDOMAIN\OneDrive - Renown Health\Documents\Work\Scripts\ShowBatchSequences"
+        $directorypath = "C:\Users\58811.WMCDOMAIN\OneDrive - Renown Health\Documents\Work\Repos and Workspaces\Ronalds-Random-Scripts\ShowBatchSequences"
 
 		# Check if SQL Server exists
 		Try {

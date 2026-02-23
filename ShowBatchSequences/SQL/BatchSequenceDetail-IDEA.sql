@@ -46,10 +46,17 @@ AS (
 		 ,(select max(EndDTS) FROM EDWAdmin.CatalystAdmin.ETLBatchHistoryBASE z
 		 WHERE  z.DataMartID=bd1.DataMartID and z.BatchDefinitionID=bd1.BatchDefinitionID  AND StatusCD='Succeeded'
 		 GROUP BY DataMartID) as CompletedDTS
-	FROM ClientAdmin.ETLSequencedBatches AS esb
-	LEFT JOIN CatalystAdmin.DataMartBASE AS d ON esb.FromDataMartNM = d.DataMartNM
-	LEFT JOIN CatalystAdmin.ETLBatchDefinitionBASE AS bd1 ON d.DataMartID = bd1.DataMartID AND esb.FromBatchDefinitionNM = bd1.BatchDefinitionNM
-
+		 ,CASE WHEN bs.ScheduleID IS NULL THEN 'Schedule (None)' 
+			   WHEN bs.EnabledFLG = 1 THEN 'Scheduled (Enabled)' 
+			   WHEN bs.EnabledFLG = 0 THEN 'Scheduled (Disabled)'
+			   ELSE 'Schedule (Other)'
+		  END as ScheduleCategoryCD
+		  ,CASE WHEN sp.PatternTypeCD IS NULL THEN 'IDEA' ELSE sp.PatternTypeCD END as SchedulePatternTypeCD
+	FROM EDWAdmin.ClientAdmin.ETLSequencedBatches AS esb
+	LEFT JOIN EDWAdmin.CatalystAdmin.DataMartBASE AS d ON esb.FromDataMartNM = d.DataMartNM
+	LEFT JOIN EDWAdmin.CatalystAdmin.ETLBatchDefinitionBASE AS bd1 ON d.DataMartID = bd1.DataMartID AND esb.FromBatchDefinitionNM = bd1.BatchDefinitionNM
+	LEFT JOIN EDWAdmin.CatalystAdmin.ETLBatchScheduleBASE bs on bd1.BatchDefinitionID = bs.BatchDefinitionID
+	LEFT JOIN EDWAdmin.CatalystAdmin.ETLSchedulePatternBASE sp on bs.ScheduleID = sp.ScheduleID
 
 	
 	UNION ALL
@@ -75,14 +82,19 @@ AS (
 		 GROUP BY DataMartID),101) = CONVERT(DATE, GETDATE(), 101 )THEN 1 ELSE 0 END as SuccessFLG	 
 		, (SELECT max(EndDTS) FROM EDWAdmin.CatalystAdmin.ETLBatchHistoryBASE z
 		 WHERE  z.DataMartID=bd.DataMartID and z.BatchDefinitionID=bd.BatchDefinitionID  AND StatusCD='Succeeded'
-		 GROUP BY DataMartID) as CompletedDTS	  
-	FROM ClientAdmin.ETLSequencedBatches AS esb
-	LEFT JOIN CatalystAdmin.DataMartBASE AS d ON esb.ToDataMartNM = d.DataMartNM
-	LEFT JOIN CatalystAdmin.ETLBatchDefinitionBASE AS bd ON d.DataMartID = bd.DataMartID AND esb.ToBatchDefinitionNM = bd.BatchDefinitionNM
-
-
+		 GROUP BY DataMartID) as CompletedDTS
+		,CASE WHEN bs.ScheduleID IS NULL THEN 'Schedule (None)' 
+			   WHEN bs.EnabledFLG = 1 THEN 'Scheduled (Enabled)' 
+			   WHEN bs.EnabledFLG = 0 THEN 'Scheduled (Disabled)'
+			   ELSE 'Schedule (Other)'
+		 END as ScheduleCategoryCD
+		,CASE WHEN sp.PatternTypeCD IS NULL THEN 'IDEA' ELSE sp.PatternTypeCD END as SchedulePatternTypeCD	  
+	FROM EDWAdmin.ClientAdmin.ETLSequencedBatches AS esb
+	LEFT JOIN EDWAdmin.CatalystAdmin.DataMartBASE AS d ON esb.ToDataMartNM = d.DataMartNM
+	LEFT JOIN EDWAdmin.CatalystAdmin.ETLBatchDefinitionBASE AS bd ON d.DataMartID = bd.DataMartID AND esb.ToBatchDefinitionNM = bd.BatchDefinitionNM
+	LEFT JOIN EDWAdmin.CatalystAdmin.ETLBatchScheduleBASE bs on bd.BatchDefinitionID = bs.BatchDefinitionID
+	LEFT JOIN EDWAdmin.CatalystAdmin.ETLSchedulePatternBASE sp on bs.ScheduleID = sp.ScheduleID
 	)
-
 	
 SELECT DISTINCT sb.LinkTXT + ' [label=<<table border="1" cellspacing="0" cellpadding="5" cellborder="0">' + CONCAT (
 		'<tr>'
@@ -102,11 +114,18 @@ SELECT DISTINCT sb.LinkTXT + ' [label=<<table border="1" cellspacing="0" cellpad
 			ELSE '<tr><td bgcolor="#ffb255ed" data-cell-info="Broken References">'
 			END
 		, sb.BatchDefinitionNM
-		,'</td></tr><tr><td>'
+		,'</td></tr>'
+		,'<tr><td>'
 		,CONCAT('Average Duration-',ISNULL(AvgDurationNBR,0),' min')
-		,'</td></tr><tr>'
-		, CASE WHEN SuccessFLG=1 then concat('<td bgcolor="#69b660ff">Finished at ',CompletedDTS) else concat('Last Run ',CompletedDTS,'<td bgcolor="#FF0000" style="color: #ffffff">Did not run today') end
-		,'</td></tr>') + '</table>>];' AS SegmentLabel
+		,'</td></tr>'
+		,'<tr><td>'
+		,CONCAT(ScheduleCategoryCD, ' | ', SchedulePatternTypeCD)
+		,'</td></tr>'
+		, CASE WHEN SuccessFLG=1 
+			then concat('<tr><td bgcolor="#69b660ff">Finished at ',CompletedDTS,'</td></tr>') 
+			else concat('<tr><td>Last Run ',CompletedDTS,'</td></tr>','<tr><td bgcolor="#FF0000" style="color: #ffffff">Did not run today</td></tr>') 
+		  end
+		) + '</table>>];' AS SegmentLabel
 FROM sb;
 
 SELECT CONCAT (

@@ -1,0 +1,4 @@
+digraph test {
+    node [shape=none];
+    "Test" [label=<<table border="1"><tr><td>Row 1</td></tr><tr><td>Scheduled (Enabled) --> Daily</td></tr></table>>];
+}
