@@ -31,8 +31,6 @@ BEGIN
         , @TableID              INT
         , @SchemaNM             SYSNAME
         , @TableNM              SYSNAME
-        , @ValidationFLG        BIT
-        , @UniqueIndexNM        SYSNAME
         , @PurgeDataFLG         BIT
         , @PurgeDateFieldNM     SYSNAME
         , @PurgeLookbackDaysNBR INT
@@ -60,8 +58,6 @@ BEGIN
           ,sn.[TableID]
           ,tb.SchemaNM
           ,tb.[TableNM]
-          ,[ValidationFLG]
-          ,sn.[UniqueIndexNM]
           ,sn.[PurgeDataFLG]
           ,sn.[PurgeDateFieldNM]
           ,sn.[PurgeLookbackDaysNBR]
@@ -90,20 +86,79 @@ BEGIN
 
     OPEN purge_cursor;
 
+    PRINT '=== Starting Purge Process ===';
+    PRINT 'EntityID: ' + CAST(@EntityID AS VARCHAR(10));
+    PRINT 'JobID: ' + CAST(@JobID AS VARCHAR(10));
+    
+    -- Log process start
+    SET @EventDSC = 'Starting Purge Process - EntityID: ' + CAST(@EntityID AS VARCHAR(10)) + ', JobID: ' + CAST(@JobID AS VARCHAR(10));
+    EXECUTE @RC = [EDWAdmin].[CatalystAdmin].[etlSetSSISEventLog] 
+        @BatchID           = @JobID
+       ,@TableID           = NULL
+       ,@PackageNM         = 'PurgeHistoricalSnapshotData'
+       ,@EventTypeCD       = 'PostEntity'
+       ,@TaskNM            = 'Process Start'
+       ,@EventDSC          = @EventDSC
+       ,@BatchDefinitionID = NULL
+       ,@ProcedureNM       = 'SAM.ClientAdmin.etlPurgeHistoricalSnapshotData'
+       ,@ExecStatment      = NULL
+       ,@DataMartID        = NULL;
+
     FETCH NEXT FROM purge_cursor INTO
           @ID, @DataMartID, @DataMartNM, @TableID,
-          @SchemaNM, @TableNM, @ValidationFLG,
-          @UniqueIndexNM, @PurgeDataFLG,
+          @SchemaNM, @TableNM,
+          @PurgeDataFLG,
           @PurgeDateFieldNM, @PurgeLookbackDaysNBR,
           @PackageNM, @ProcedureNM, @EventTypeCD,@TaskNM,
           @BaseExecStatement, @BatchDefinitionID;
 
     WHILE @@FETCH_STATUS = 0
     BEGIN
+        PRINT '';
+        PRINT '--- Processing Table ---';
+        PRINT 'Table: ' + @SchemaNM + '.' + @TableNM;
+        PRINT 'TableID: ' + CAST(@TableID AS VARCHAR(10));
+        PRINT 'PurgeDataFLG: ' + CAST(@PurgeDataFLG AS VARCHAR(1));
+        PRINT 'PurgeDateFieldNM: ' + ISNULL(@PurgeDateFieldNM, 'NULL');
+        PRINT 'PurgeLookbackDaysNBR: ' + ISNULL(CAST(@PurgeLookbackDaysNBR AS VARCHAR(10)), 'NULL');
+        
+        -- Log table processing start
+        SET @EventDSC = 'Processing Table: ' + @SchemaNM + '.' + @TableNM + 
+                        ' | PurgeDataFLG: ' + CAST(@PurgeDataFLG AS VARCHAR(1)) + 
+                        ' | PurgeDateFieldNM: ' + ISNULL(@PurgeDateFieldNM, 'NULL') + 
+                        ' | PurgeLookbackDaysNBR: ' + ISNULL(CAST(@PurgeLookbackDaysNBR AS VARCHAR(10)), 'NULL');
+        EXECUTE @RC = [EDWAdmin].[CatalystAdmin].[etlSetSSISEventLog] 
+            @BatchID           = @JobID
+           ,@TableID           = @TableID
+           ,@PackageNM         = @PackageNM
+           ,@EventTypeCD       = @EventTypeCD
+           ,@TaskNM            = 'Table Processing Start'
+           ,@EventDSC          = @EventDSC
+           ,@BatchDefinitionID = @BatchDefinitionID
+           ,@ProcedureNM       = @ProcedureNM
+           ,@ExecStatment      = NULL
+           ,@DataMartID        = @DataMartID;
+        
         ------------------------------------------------------------------
         -- Compute Whole-Day Cutoff
         ------------------------------------------------------------------
         SET @CutoffDate = DATEADD(DAY, -ISNULL(@PurgeLookbackDaysNBR,0), CAST(GETDATE() AS DATE));
+        
+        PRINT 'Cutoff Date: ' + CONVERT(VARCHAR(10), @CutoffDate, 120);
+        
+        -- Log cutoff date
+        SET @EventDSC = 'Cutoff Date Calculated: ' + CONVERT(VARCHAR(10), @CutoffDate, 120);
+        EXECUTE @RC = [EDWAdmin].[CatalystAdmin].[etlSetSSISEventLog] 
+            @BatchID           = @JobID
+           ,@TableID           = @TableID
+           ,@PackageNM         = @PackageNM
+           ,@EventTypeCD       = @EventTypeCD
+           ,@TaskNM            = 'Cutoff Date Calculation'
+           ,@EventDSC          = @EventDSC
+           ,@BatchDefinitionID = @BatchDefinitionID
+           ,@ProcedureNM       = @ProcedureNM
+           ,@ExecStatment      = NULL
+           ,@DataMartID        = @DataMartID;
 
         ------------------------------------------------------------------
         -- Build DELETE Statement (execution or preview)
@@ -123,7 +178,24 @@ BEGIN
         IF @PurgeDataFLG = 1 
            AND @PurgeDateFieldNM IS NOT NULL
            AND @PurgeLookbackDaysNBR IS NOT NULL
+           AND @PurgeLookbackDaysNBR > 0
         BEGIN
+            PRINT 'PURGE ENABLED - Starting deletion process...';
+            
+            -- Log purge enabled
+            SET @EventDSC = 'PURGE ENABLED - Starting deletion process for ' + @SchemaNM + '.' + @TableNM;
+            EXECUTE @RC = [EDWAdmin].[CatalystAdmin].[etlSetSSISEventLog] 
+                @BatchID           = @JobID
+               ,@TableID           = @TableID
+               ,@PackageNM         = @PackageNM
+               ,@EventTypeCD       = @EventTypeCD
+               ,@TaskNM            = 'Purge Enabled'
+               ,@EventDSC          = @EventDSC
+               ,@BatchDefinitionID = @BatchDefinitionID
+               ,@ProcedureNM       = @ProcedureNM
+               ,@ExecStatment      = @ExecStatement
+               ,@DataMartID        = @DataMartID;
+            
             WHILE 1 = 1   -- Extra-safe loop
             BEGIN
                 EXEC sp_executesql 
@@ -133,8 +205,13 @@ BEGIN
 
                 SET @RowsAffected = @@ROWCOUNT;
 
+                PRINT 'Batch deleted: ' + CAST(@RowsAffected AS VARCHAR(10)) + ' rows';
+
                 IF @RowsAffected = 0
+                BEGIN
+                    PRINT 'No more rows to delete. Exiting loop.';
                     BREAK;
+                END
 
                 SET @EventDSC =
                     CONCAT(@RowsAffected,
@@ -164,8 +241,30 @@ BEGIN
             ------------------------------------------------------------------
             -- PURGE DISABLED (Audit-Only Mode)
             ------------------------------------------------------------------
+            PRINT 'PURGE DISABLED - Conditions not met:';
+            IF @PurgeDataFLG = 0
+                PRINT '  - PurgeDataFLG = 0';
+            IF @PurgeDateFieldNM IS NULL
+                PRINT '  - PurgeDateFieldNM IS NULL';
+            IF @PurgeLookbackDaysNBR IS NULL
+                PRINT '  - PurgeLookbackDaysNBR IS NULL';
+            IF @PurgeLookbackDaysNBR = 0
+                PRINT '  - PurgeLookbackDaysNBR = 0 (safety check)';
+            
+            -- Build detailed reason for disabled purge
+            DECLARE @DisabledReason NVARCHAR(500) = 'PURGE DISABLED - Reasons: ';
+            IF @PurgeDataFLG = 0
+                SET @DisabledReason = @DisabledReason + 'PurgeDataFLG=0; ';
+            IF @PurgeDateFieldNM IS NULL
+                SET @DisabledReason = @DisabledReason + 'PurgeDateFieldNM IS NULL; ';
+            IF @PurgeLookbackDaysNBR IS NULL
+                SET @DisabledReason = @DisabledReason + 'PurgeLookbackDaysNBR IS NULL; ';
+            IF @PurgeLookbackDaysNBR = 0
+                SET @DisabledReason = @DisabledReason + 'PurgeLookbackDaysNBR=0 (safety check); ';
+            
             SET @EventDSC =
-                CONCAT('PurgeDataFLG = 0. No deletes executed for ',
+                CONCAT(@DisabledReason, 
+                       ' No deletes executed for ',
                        @SchemaNM, '.', @TableNM,
                        '. Delete statement preview only.');
 			SET @BatchID = @JobID;
@@ -185,8 +284,8 @@ BEGIN
 
         FETCH NEXT FROM purge_cursor INTO
               @ID, @DataMartID, @DataMartNM, @TableID,
-              @SchemaNM, @TableNM, @ValidationFLG,
-              @UniqueIndexNM, @PurgeDataFLG,
+              @SchemaNM, @TableNM,
+              @PurgeDataFLG,
               @PurgeDateFieldNM, @PurgeLookbackDaysNBR,
               @PackageNM, @ProcedureNM, @EventTypeCD,@TaskNM,
               @BaseExecStatement, @BatchDefinitionID;
@@ -194,5 +293,22 @@ BEGIN
 
     CLOSE purge_cursor;
     DEALLOCATE purge_cursor;
+
+    PRINT '';
+    PRINT '=== Purge Process Complete ===';
+    
+    -- Log process completion
+    SET @EventDSC = 'Purge Process Complete - EntityID: ' + CAST(@EntityID AS VARCHAR(10)) + ', JobID: ' + CAST(@JobID AS VARCHAR(10));
+    EXECUTE @RC = [EDWAdmin].[CatalystAdmin].[etlSetSSISEventLog] 
+        @BatchID           = @JobID
+       ,@TableID           = NULL
+       ,@PackageNM         = 'PurgeHistoricalSnapshotData'
+       ,@EventTypeCD       = 'PostEntity'
+       ,@TaskNM            = 'Process Complete'
+       ,@EventDSC          = @EventDSC
+       ,@BatchDefinitionID = NULL
+       ,@ProcedureNM       = 'SAM.ClientAdmin.etlPurgeHistoricalSnapshotData'
+       ,@ExecStatment      = NULL
+       ,@DataMartID        = NULL;
 
 END
